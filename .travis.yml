@@ -4,6 +4,7 @@ cache:
     directories:
         - $HOME/libpsl-0.20.1
         - $HOME/libidn2-2.0.4
+        - $HOME/wolfssl-3.14.0-stable
 
 env:
     global:
@@ -60,6 +61,10 @@ matrix:
           compiler: gcc
           dist: trusty
           env: T=novalgrind BORINGSSL=yes -C="--with-ssl=$HOME/boringssl" LD_LIBRARY_PATH=/home/travis/boringssl/lib:/usr/local/lib
+        - os: linux
+          compiler: gcc
+          dist: trusty
+          env: T=debug -C="--with-cyassl --without-ssl"
         - os: linux
           compiler: clang
           dist: trusty
@@ -176,8 +181,22 @@ before_script:
       fi
     - |
       if [ $TRAVIS_OS_NAME = linux ]; then
+        if [ ! -e $HOME/wolfssl-3.14.0-stable/Makefile ]; then
+          (cd $HOME && \
+          curl -LO https://github.com/wolfSSL/wolfssl/archive/v3.14.0-stable.tar.gz && \
+          tar -xzf v3.14.0-stable.tar.gz && \
+          cd wolfssl-3.14.0-stable && \
+          ./autogen.sh && \
+          ./configure && \
+          touch wolfssl/wolfcrypt/fips.h && \
+          make)
+        fi
+      fi
+    - |
+      if [ $TRAVIS_OS_NAME = linux ]; then
         (cd $HOME/libidn2-2.0.4 && sudo make install)
         (cd $HOME/libpsl-0.20.1 && sudo make install)
+        (cd $HOME/wolfssl-3.14.0-stable && sudo make install)
       fi
 
 script:
