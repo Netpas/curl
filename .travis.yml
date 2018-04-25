@@ -187,7 +187,7 @@ before_script:
           tar -xzf mbedtls-2.8.0.tar.gz && \
           cd mbedtls-mbedtls-2.8.0 && \
           cmake . -DCMAKE_INSTALL_PREFIX=/usr/local && \
-          make)
+          make CFLAGS=-fPIC)
         fi
       fi
     - |
