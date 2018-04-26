@@ -55,6 +55,9 @@ timediff_t Curl_pgrsLimitWaitTime(curl_off_t cursize,
                                   curl_off_t limit,
                                   struct curltime start,
                                   struct curltime now);
+void Curl_pgrsSetLimitStartTime(struct Curl_easy *data,
+                                struct curltime now,
+                                timerid timer);
 
 /* Don't show progress for sizes smaller than: */
 #define LEAST_SIZE_PROGRESS BUFSIZE

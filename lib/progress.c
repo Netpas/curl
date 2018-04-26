@@ -225,6 +225,8 @@ void Curl_pgrsTime(struct Curl_easy *data, timerid timer)
       us = 1; /* make sure at least one microsecond passed */
     *delta += us;
   }
+  /* set the limit start time to TTFB */
+  Curl_pgrsSetLimitStartTime(data, now, timer);
 }
 
 void Curl_pgrsStartNow(struct Curl_easy *data)
@@ -298,6 +300,53 @@ timediff_t Curl_pgrsLimitWaitTime(curl_off_t cursize,
   }
 
   return 0;
+}
+
+/*
+ * Set the 'xx_limit_start' starting point.
+ * Possible positions of 'dl_limit_start' are as follows:
+ * |_________________________|________________________|
+ * (1) dns resolution time  (2)  tcp connection time (3)
+ * __________________|__________________________|____________|
+ *     tls time     (4) Time to First Byte(TTFB)             ok
+ */
+void Curl_pgrsSetLimitStartTime(struct Curl_easy *data,
+                                struct curltime now,
+                                timerid timer)
+{
+  if(data == NULL) {
+    return;
+  }
+
+  switch(timer) {
+  case TIMER_CONNECT:
+    /*(3) TCP connect completed */
+    return;
+  case TIMER_STARTTRANSFER:
+    /*(4) TTFB */
+    break;
+  case TIMER_NAMELOOKUP:
+    /*(2) name resolving was completed */
+    return;
+  case TIMER_APPCONNECT:
+    /* SSL/SSH/etc connect/handshake completed */
+    return;
+  default:
+    return;
+  }
+
+  if(data->set.max_recv_speed > 0 && \
+      data->progress.dl_limit_size == 0 && \
+      data->progress.downloaded == 0) {
+        data->progress.dl_limit_start = now;
+        infof(data, "dl_limit_start: set ttfb time!\n");
+  }
+  if(data->set.max_send_speed > 0 && \
+      data->progress.ul_limit_size == 0 && \
+      data->progress.uploaded == 0) {
+        data->progress.ul_limit_start = now;
+        infof(data, "ul_limit_start: set ttfb time!\n");
+  }
 }
 
 /*
